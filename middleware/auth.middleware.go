@@ -1,9 +1,10 @@
-package utils
+package middleware
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"wimb-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -19,7 +20,14 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		cookieJSON, err := url.QueryUnescape(cookie.Value)
+		decodedCookie, err := utils.Decrypt(cookie.Value)
+
+		if err != nil {
+			ctx.Next()
+			return
+		}
+
+		cookieJSON, err := url.QueryUnescape(decodedCookie)
 
 		if err != nil {
 			ctx.Next()

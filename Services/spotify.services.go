@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"wimb-backend/config"
 	"wimb-backend/repo"
 
 	"github.com/zmb3/spotify"
@@ -26,7 +27,7 @@ func (s *SpotifyService) Login(code *string) (*spotify.Client, *oauth2.Token, er
 	client, token, err := s.repo.GetClientForUser(code)
 	return client, token, err
 }
-func (s *SpotifyService) GetTopTracks(token *oauth2.Token) (*spotify.FullTrackPage, *oauth2.Token, error) {
+func (s *SpotifyService) GetTopTracks(token *oauth2.Token, time_range *string) (*spotify.FullTrackPage, *oauth2.Token, error) {
 
 	client, token, err := s.repo.GetUser(token)
 
@@ -35,7 +36,14 @@ func (s *SpotifyService) GetTopTracks(token *oauth2.Token) (*spotify.FullTrackPa
 		return nil, nil, err
 	}
 
-	tracks, err := client.CurrentUsersTopTracks()
+	limit := config.ITEMS_LIMIT
+
+	fmt.Println("TIME RANGE", time_range)
+
+	tracks, err := client.CurrentUsersTopTracksOpt(&spotify.Options{
+		Limit:     &limit,
+		Timerange: time_range,
+	})
 
 	if err != nil {
 		fmt.Println("Error", err.Error())

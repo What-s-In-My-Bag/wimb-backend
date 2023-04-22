@@ -2,7 +2,7 @@ package routes
 
 import (
 	controllers "wimb-backend/Controllers"
-	"wimb-backend/utils"
+	"wimb-backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,5 +15,5 @@ func SpotifyRoute(router *gin.Engine) {
 	r.GET("/login", controller.Login())
 	u := r.Group("/user")
 
-	u.GET("/toptracks", utils.Auth(), controller.GetTopTracks())
+	u.GET("/toptracks", middleware.Auth(), controller.GetTopTracks())
 }

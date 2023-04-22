@@ -7,6 +7,7 @@ import (
 	dto "wimb-backend/DTO"
 	services "wimb-backend/Services"
 	"wimb-backend/config"
+	"wimb-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -79,8 +80,20 @@ func (c *SpotifyController) Login() gin.HandlerFunc {
 				MakeResponse(ctx)
 			return
 		}
+		encryptedToken, err := utils.Encrypt(string(tokenString))
 
-		ctx.SetCookie("token", string(tokenString), 3600, "/", "", true, true)
+		if err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusInternalServerError).
+				SetMessage("error").
+				SetData(gin.H{
+					"error": "Failed to parse token",
+				}).
+				MakeResponse(ctx)
+			return
+		}
+
+		ctx.SetCookie("token", string(encryptedToken), 3600, "/", "", true, true)
 
 		dto.NewGenericResponseBuilder().
 			SetStatus(http.StatusOK).
@@ -106,7 +119,17 @@ func (c *SpotifyController) GetTopTracks() gin.HandlerFunc {
 			return
 		}
 
-		tracks, token, err := c.service.GetTopTracks(token.(*oauth2.Token))
+		time_range := ctx.Query("time_range")
+		fmt.Println("TIME RANGE", time_range)
+
+		if time_range == "" {
+			time_range = config.LONG_TERM_RANGE
+
+		}
+
+		fmt.Println("TIME RANGE", time_range)
+
+		tracks, token, err := c.service.GetTopTracks(token.(*oauth2.Token), &time_range)
 
 		if err != nil {
 			dto.NewGenericResponseBuilder().
