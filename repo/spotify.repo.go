@@ -53,10 +53,10 @@ func (s *SpotifyRepo) GetClientForUser(code *string) (*spotify.Client, *oauth2.T
 
 }
 
-func (s *SpotifyRepo) GetAuthUrl() *string {
-	conf := s.config
+func (s *SpotifyRepo) GetAuthUrl(origin *string) *string {
+	s.config.RedirectURL = *origin
 	state := config.STATE
-	url := conf.AuthCodeURL(state, oauth2.SetAuthURLParam("show_dialog", "true"))
+	url := s.config.AuthCodeURL(state, oauth2.SetAuthURLParam("show_dialog", "true"))
 
 	return &url
 }

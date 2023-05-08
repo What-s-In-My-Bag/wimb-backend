@@ -16,4 +16,5 @@ func SpotifyRoute(router *gin.Engine) {
 	u := r.Group("/user")
 
 	u.GET("/toptracks", middleware.Auth(), controller.GetTopTracks())
+	u.GET("/info", middleware.Auth(), controller.GetUserInfo())
 }

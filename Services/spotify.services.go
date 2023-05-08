@@ -19,8 +19,8 @@ func NewSpotifyService() *SpotifyService {
 	}
 }
 
-func (s *SpotifyService) GetAuthUrl() *string {
-	return s.repo.GetAuthUrl()
+func (s *SpotifyService) GetAuthUrl(origin *string) *string {
+	return s.repo.GetAuthUrl(origin)
 }
 
 func (s *SpotifyService) Login(code *string) (*spotify.Client, *oauth2.Token, error) {
@@ -51,5 +51,22 @@ func (s *SpotifyService) GetTopTracks(token *oauth2.Token, time_range *string) (
 	}
 
 	return tracks, token, nil
+}
 
+func (s *SpotifyService) GetUserInfo(token *oauth2.Token) (*spotify.PrivateUser, *oauth2.Token, error) {
+	client, token, err := s.repo.GetUser(token)
+
+	if err != nil {
+		fmt.Println("Error", err.Error())
+		return nil, nil, fmt.Errorf("error getting user")
+	}
+
+	userInfo, err := client.CurrentUser()
+
+	if err != nil {
+		fmt.Println("Error", err.Error())
+		return nil, nil, fmt.Errorf("user Not found")
+	}
+
+	return userInfo, token, nil
 }
