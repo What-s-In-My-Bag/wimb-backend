@@ -1,0 +1,20 @@
+{
+  "user_id": 1,
+  "albums": [
+    {
+      "spotify_id": "1",
+      "name": "KID A",
+      "cover": "https://m.media-amazon.com/images/I/71I5kJS+dsL._UF1000,1000_QL80_.jpg"
+    },
+    {
+      "spotify_id": "2",
+      "name": "In Rainbows",
+      "cover": "https://static.stereogum.com/uploads/2017/09/In-Rainbows-1506460221.jpg"
+    },
+    {
+      "spotify_id": "3",
+      "name": "OK Computer",
+      "cover": "https://npr.brightspotcdn.com/legacy/sites/wshu/files/201705/okcomputer.jpg"
+    }
+  ]
+}

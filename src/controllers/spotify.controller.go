@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	dto "wimb-backend/DTO"
-	services "wimb-backend/Services"
-	"wimb-backend/config"
-	"wimb-backend/utils"
+	dto "wimb-backend/src/DTO"
+	"wimb-backend/src/config"
+	services "wimb-backend/src/services"
+	"wimb-backend/src/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -23,35 +23,22 @@ func NewSpotifyController() *SpotifyController {
 	}
 }
 
-func (c *SpotifyController) setTokenCookie(ctx *gin.Context, token *oauth2.Token) bool {
+func (c *SpotifyController) setTokenCookie(ctx *gin.Context, token *oauth2.Token) error {
 
+	e := fmt.Errorf("Failed to parse token")
 	tokenString, err := json.Marshal(token)
 
 	if err != nil {
-		dto.NewGenericResponseBuilder().
-			SetStatus(http.StatusInternalServerError).
-			SetMessage("error").
-			SetData(gin.H{
-				"error": "Failed to parse token",
-			}).
-			MakeResponse(ctx)
-		return false
+		return e
 	}
 	encryptedToken, err := utils.Encrypt(string(tokenString))
 
 	if err != nil {
-		dto.NewGenericResponseBuilder().
-			SetStatus(http.StatusInternalServerError).
-			SetMessage("error").
-			SetData(gin.H{
-				"error": "Failed to parse token",
-			}).
-			MakeResponse(ctx)
-		return false
+		return e
 	}
 
 	ctx.SetCookie("token", string(encryptedToken), 3600, "/", "", true, true)
-	return true
+	return nil
 
 }
 
@@ -119,9 +106,16 @@ func (c *SpotifyController) Login() gin.HandlerFunc {
 			return
 		}
 
-		success := c.setTokenCookie(ctx, token)
+		err = c.setTokenCookie(ctx, token)
 
-		if !success {
+		if err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusInternalServerError).
+				SetMessage("error").
+				SetData(gin.H{
+					"error": err.Error(),
+				}).
+				MakeResponse(ctx)
 			return
 		}
 
@@ -167,9 +161,17 @@ func (c *SpotifyController) GetTopTracks() gin.HandlerFunc {
 
 		}
 
-		success := c.setTokenCookie(ctx, token)
+		err = c.setTokenCookie(ctx, token)
 
-		if !success {
+		if err != nil {
+
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusInternalServerError).
+				SetMessage("error").
+				SetData(gin.H{
+					"error": err.Error(),
+				}).
+				MakeResponse(ctx)
 			return
 		}
 
@@ -204,9 +206,16 @@ func (c *SpotifyController) GetUserInfo() gin.HandlerFunc {
 			return
 		}
 
-		success := c.setTokenCookie(ctx, token)
+		err = c.setTokenCookie(ctx, token)
 
-		if !success {
+		if err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusInternalServerError).
+				SetMessage("error").
+				SetData(gin.H{
+					"error": err.Error(),
+				}).
+				MakeResponse(ctx)
 			return
 		}
 

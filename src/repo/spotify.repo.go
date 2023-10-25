@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
-	"wimb-backend/config"
-	"wimb-backend/utils"
+	"wimb-backend/src/config"
+	"wimb-backend/src/utils"
 
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2"

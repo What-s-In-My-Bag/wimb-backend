@@ -1,8 +1,8 @@
 package routes
 
 import (
-	controllers "wimb-backend/Controllers"
-	"wimb-backend/middleware"
+	controllers "wimb-backend/src/controllers"
+	"wimb-backend/src/middleware"
 
 	"github.com/gin-gonic/gin"
 )

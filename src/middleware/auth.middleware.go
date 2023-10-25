@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"wimb-backend/utils"
+	"wimb-backend/src/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"

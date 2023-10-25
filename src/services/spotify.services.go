@@ -2,8 +2,8 @@ package services
 
 import (
 	"fmt"
-	"wimb-backend/config"
-	"wimb-backend/repo"
+	"wimb-backend/src/config"
+	"wimb-backend/src/repo"
 
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2"
@@ -37,8 +37,6 @@ func (s *SpotifyService) GetTopTracks(token *oauth2.Token, time_range *string) (
 	}
 
 	limit := config.ITEMS_LIMIT
-
-	fmt.Println("TIME RANGE", time_range)
 
 	tracks, err := client.CurrentUsersTopTracksOpt(&spotify.Options{
 		Limit:     &limit,

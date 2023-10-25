@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"wimb-backend/config"
+	"wimb-backend/src/config"
 
 	"golang.org/x/crypto/pbkdf2"
 )
