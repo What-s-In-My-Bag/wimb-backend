@@ -54,9 +54,11 @@ func MergeAlbums(avg_albums *[]AVGColorAlbumResponse, albums *[]models.BaseAlbum
 			result = append(result,
 				models.Album{
 					BaseAlbum: al,
-					R_Avg:     v.Avg_color.R,
-					G_Avg:     v.Avg_color.G,
-					B_Avg:     v.Avg_color.B,
+					AlbumRGB: models.AlbumRGB{
+						R_Avg: v.Avg_color.R,
+						G_Avg: v.Avg_color.G,
+						B_Avg: v.Avg_color.B,
+					},
 				},
 			)
 

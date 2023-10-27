@@ -12,11 +12,13 @@ CREATE TYPE user_bag_album AS (
     profile_img VARCHAR(250),
     shirt_color VARCHAR(15),
     show_album_names BOOLEAN,
+    album_spotify_id VARCHAR(20),
     name VARCHAR(40) ,
     cover VARCHAR(250) ,
     r_avg INT,
     g_avg INT,
     b_avg INT,
+    song_spotify_id VARCHAR(20),
     song_name VARCHAR(300)
 );
 
@@ -120,7 +122,7 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS get_user_populated;
  
 CREATE FUNCTION get_user_populated(
-    p_user_id INT
+    p_user_uuid CHAR(16)
 )
 RETURNS SETOF user_bag_album AS $$
     BEGIN
@@ -131,11 +133,13 @@ RETURNS SETOF user_bag_album AS $$
             u.profile_img, 
             b.shirt_color, 
             b.show_album_names,
+            a.spotify_id AS album_spotify_id,
             a.name,
             a.cover,
             a.r_avg,
             a.g_avg,
             a.b_avg,
+            s.spotify_id AS song_spotify_id,
             s.name AS song_name
           FROM users u
           JOIN (
@@ -154,7 +158,7 @@ RETURNS SETOF user_bag_album AS $$
             LEFT JOIN albums_bags ba ON b.id = ba.bag_id                
             LEFT JOIN albums a ON ba.album_id = a.id
             LEFT JOIN songs s ON a.id = s.album_id
-            WHERE u.id = p_user_id; 
+            WHERE u.uuid = p_user_uuid; 
 
     END
 

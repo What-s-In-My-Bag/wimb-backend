@@ -5,11 +5,14 @@ import (
 	"time"
 )
 
-type BaseUser struct {
+type UserBasicParams struct {
 	Username    string `json:"username" binding:"required"`
-	Email       string `json:"email" binding:"required"`
 	Profile_Img string `json:"profile_img" binding:"required"`
-	Spotify_Id  string `json:"spotify_id" binding:"required"`
+}
+type BaseUser struct {
+	Email      string `json:"email" binding:"required"`
+	Spotify_Id string `json:"spotify_id" binding:"required"`
+	UserBasicParams
 }
 
 type User struct {

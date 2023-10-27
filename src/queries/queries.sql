@@ -75,14 +75,15 @@ CALL insert_album(
 
 
 CALL insert_song(
-    'asdj3enfa',
-    'Idioteque',
-    2
+    'adrj3a',
+    'In Limbo',
+    49
 )
 
 SELECT * FROM albums;
 DELETE from songs;
 SELECT * FROM songs;
+SELECT * FROM users;
 
 CALL update_bag(
     3,
@@ -108,7 +109,7 @@ select * from bags;
 
 
 SELECT * FROM get_user(2);
-SELECT * FROM get_user_populated(3);
+SELECT * FROM get_user_populated('8937asd9');
 
 SELECT * FROM users;
 

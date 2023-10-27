@@ -95,3 +95,36 @@ func (c *DBController) InsertAlbums() gin.HandlerFunc {
 	}
 
 }
+
+func (c *DBController) GetUser() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		uuid := ctx.Param("uuid")
+		if uuid == "" {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusBadRequest).
+				SetMessage("Error").
+				SetData(gin.H{
+					"error": "please provide a valid uuid",
+				}).MakeResponse(ctx)
+			return
+		}
+		result, err := c.service.GetUser(&uuid)
+
+		if err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusBadRequest).
+				SetMessage("Error").
+				SetData(gin.H{
+					"error": err.Error(),
+				}).MakeResponse(ctx)
+			return
+		}
+
+		dto.NewGenericResponseBuilder().
+			SetStatus(http.StatusOK).
+			SetMessage("Ok").
+			SetData(gin.H{
+				"result": result,
+			}).MakeResponse(ctx)
+	}
+}

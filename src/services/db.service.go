@@ -12,6 +12,7 @@ import (
 	"wimb-backend/src/config"
 	"wimb-backend/src/models"
 	"wimb-backend/src/repo"
+	"wimb-backend/src/utils"
 )
 
 type DBService struct {
@@ -28,19 +29,19 @@ func get_avgs_color(albums *[]models.BaseAlbum) ([]dto.AVGColorAlbumResponse, er
 	env := config.GetEnvs()
 	apiUrl := env.SERVICE_ENDPOINT
 
-	generalError := fmt.Errorf("invalid albums")
+	generalError := fmt.Errorf("error getting avg colors for albums")
 
 	requestBody, err := json.Marshal(dto.GenerateInputColorAlbums(albums))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return nil, generalError
 	}
 
 	request, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(requestBody))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return nil, generalError
 	}
 	request.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -51,14 +52,14 @@ func get_avgs_color(albums *[]models.BaseAlbum) ([]dto.AVGColorAlbumResponse, er
 	response, err := client.Do(request)
 
 	if err != nil {
-		fmt.Print(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return nil, generalError
 	}
 
 	responseBody, err := io.ReadAll(response.Body)
 
 	if err != nil {
-		fmt.Print(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return nil, generalError
 	}
 
@@ -67,7 +68,7 @@ func get_avgs_color(albums *[]models.BaseAlbum) ([]dto.AVGColorAlbumResponse, er
 	err = json.Unmarshal(responseBody, &avg_color_albums)
 
 	if err != nil {
-		fmt.Print(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return nil, generalError
 	}
 
@@ -120,22 +121,11 @@ func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) err
 	avg_colors, err := get_avgs_color(&existing_albums)
 
 	if err != nil {
-		fmt.Print(err.Error())
+		utils.GetLogger().Error(err.Error())
 		return fmt.Errorf("inserting albums went wrong")
 	}
 
 	inserted_albums := dto.MergeAlbums(&avg_colors, &existing_albums)
-
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Printf("%v", inserted_albums)
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
 
 	errCh := make(chan error)
 	stopCh := make(chan struct{})
@@ -172,5 +162,8 @@ func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) err
 	}
 
 	return nil
+}
 
+func (s *DBService) GetUser(user_uuid *string) (dto.BagResponse, error) {
+	return s.repo.GetUser(user_uuid)
 }
