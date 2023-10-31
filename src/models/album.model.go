@@ -4,6 +4,8 @@ type BaseAlbum struct {
 	Spotify_Id string `json:"spotify_id" binding:"required"`
 	Name       string `json:"name" binding:"required"`
 	Cover      string `json:"cover" binding:"required"`
+	Width      int    `json:"width" binding:"required"`
+	Height     int    `json:"height" binding:"required"`
 }
 
 type AlbumRGB struct {

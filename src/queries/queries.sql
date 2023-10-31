@@ -3,9 +3,21 @@ SELECT * FROM get_user_populated(2);
 DELETE FROM songs;
 DELETE FROM albums_bags;
 delete FROM albums;
+SELECT * FROM albums;
+DELETE from songs;
+SELECT * FROM songs;
+SELECT * FROM users;
+SELECT * FROM bags;
+
+SELECT * FROM get_user(2);
+SELECT * FROM get_user_populated('u3132');
+SELECT * FROM get_bag_populated(1);
 
 
-CALL create_user(
+
+-- Insert TEST USER
+
+SELECT create_user(
 'u3132',
 'carlos',
 'carlos@gmail.com',
@@ -13,77 +25,107 @@ CALL create_user(
 '1283812'
 );
 
-CALL insert_album(
+SELECT insert_album(
     '123dsakd',
-    'In Rainbow',
+    'In Rainbows',
     'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
     109,
     74,
     50,
+    300,
+    300,
     1
 );
 
-CALL insert_album(
-    'asdadkasdjk',
-    'KID A',
-    'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
-    109,
-    74,
-    50,
+
+SELECT insert_album(
+    'kida123',
+    'kID A',
+    'https://upload.wikimedia.org/wikipedia/en/0/02/Radioheadkida.png',
+    124,
+    123,
+    123,    
+    300,
+    300,
     1
 );
 
-CALL insert_album(
-    '123124dasdk',
-    'KID A',
-    'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
-    109,
-    74,
-    50,
-    1
-);
-
-CALL insert_album(
-    'asdjaksd',
-    'KID A',
-    'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
-    109,
-    74,
-    50,
-    1
-);
-
-CALL insert_album(
-    '12312nda',
-    'KID A',
-    'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
-    109,
-    74,
-    50,
-    1
-);
-
-CALL insert_album(
-    '1231axcmczkxc',
-    'KID A',
-    'https://upload.wikimedia.org/wikipedia/en/1/14/Inrainbowscover.png',
-    109,
-    74,
-    50,
+SELECT insert_album(
+    'okcomp123',
+    'Ok Computer',
+    'https://upload.wikimedia.org/wikipedia/en/b/ba/Radioheadokcomputer.png',
+    200,
+    220,
+    228,    
+    300,
+    300,
     1
 );
 
 
 CALL insert_song(
-    'adrj3a',
-    'In Limbo',
-    49
-)
+    'wf123',
+    'Weird Fishes',
+    1
+);
 
-SELECT * FROM albums;
-DELETE from songs;
-SELECT * FROM songs;
-SELECT * FROM users;
+CALL insert_song(
+    'ain',
+    'All I need',
+    1
+);
+
+CALL insert_song(
+    'jfip',
+    'Jigsaw Falling Into Place',
+    1
+);
+
+CALL insert_song(
+    'inlimbo123',
+    'In Limbo',
+    2
+);
+
+
+CALL insert_song(
+    'htdc123',
+    'How to disappear completely',
+    2
+);
+
+CALL insert_song(
+    'optimistic123',
+    'Optimistic',
+    2
+);
+
+CALL insert_song(
+    'cbutw123',
+    'Climbing Up The Walls',
+    3
+);
+
+CALL insert_song(
+    'pa123',
+    'Paranoid Android',
+    3
+);
+
+CALL insert_song(
+    'ns133',
+    'No Surprises',
+    3
+);
+
+SELECT * FROM insert_song(
+    'fh133',
+    'Fittier Happier',
+    3
+);
+
+
+-- END OF INSERTING TEST USER
 
 CALL update_bag(
     3,
@@ -108,8 +150,6 @@ CALL delete_latest_bag(
 select * from bags;
 
 
-SELECT * FROM get_user(2);
-SELECT * FROM get_user_populated('8937asd9');
 
 SELECT * FROM users;
 

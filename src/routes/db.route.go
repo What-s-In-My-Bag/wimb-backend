@@ -14,4 +14,5 @@ func DBRoute(router *gin.Engine, db *sql.DB) {
 	r.GET("/user/:uuid", controller.GetUser())
 	r.POST("/user", controller.InsertUser())
 	r.POST("/album", controller.InsertAlbums())
+	r.GET("/bag/:id", controller.GetBag())
 }

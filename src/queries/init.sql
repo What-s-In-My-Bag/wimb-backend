@@ -3,7 +3,7 @@ use admin;
 DROP DATABASE wimb;
 CREATE DATABASE wimb WITH OWNER = admin;
 
-DROP TYPE user_bag_album;
+DROP TYPE IF EXISTS user_bag_album;
 
 CREATE TYPE user_bag_album AS (
     id INT,
@@ -13,11 +13,13 @@ CREATE TYPE user_bag_album AS (
     shirt_color VARCHAR(15),
     show_album_names BOOLEAN,
     album_spotify_id VARCHAR(20),
-    name VARCHAR(40) ,
-    cover VARCHAR(250) ,
+    name VARCHAR(40),
+    cover VARCHAR(250),
     r_avg INT,
     g_avg INT,
     b_avg INT,
+    width INT,
+    height iNT,
     song_spotify_id VARCHAR(20),
     song_name VARCHAR(300)
 );
@@ -46,6 +48,8 @@ CREATE TABLE albums(
     spotify_id varchar(20) unique  not null,
     name VARCHAR(40) NOT NULL,
     cover VARCHAR(250) NOT NULL,
+    width INT NOT NULL,
+    height INT NOT NULL,
     r_avg INT DEFAULT 0 NOT NULL,
     g_avg INT DEFAULT 0 NOT NULL,
     b_avg INT DEFAULT 0 NOT NULL
@@ -139,6 +143,8 @@ RETURNS SETOF user_bag_album AS $$
             a.r_avg,
             a.g_avg,
             a.b_avg,
+            a.width,
+            a.height,
             s.spotify_id AS song_spotify_id,
             s.name AS song_name
           FROM users u
@@ -164,18 +170,50 @@ RETURNS SETOF user_bag_album AS $$
 
 $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS get_bag_populated(_bag_id INT) ;
+
+CREATE FUNCTION get_bag_populated(_bag_id INT) 
+RETURNS SETOF user_bag_album AS $$
+BEGIN
+    RETURN QUERY SELECT 
+            u.id,
+            u.uuid,
+            u.username, 
+            u.profile_img, 
+            b.shirt_color, 
+            b.show_album_names,
+            a.spotify_id AS album_spotify_id,
+            a.name,
+            a.cover,
+            a.r_avg,
+            a.g_avg,
+            a.b_avg,
+            a.width,
+            a.height,
+            s.spotify_id AS song_spotify_id,
+            s.name AS song_name
+        FROM bags b 
+        JOIN users u ON b.user_id = u.id
+        LEFT JOIN albums_bags ba ON b.id = ba.bag_id                
+        LEFT JOIN albums a ON ba.album_id = a.id
+        LEFT JOIN songs s ON a.id = s.album_id
+        WHERE b.id = _bag_id;
+END
+$$ LANGUAGE plpgsql;
+
 DROP PROCEDURE IF EXISTS create_user;
 
-CREATE OR REPLACE PROCEDURE create_user(
+CREATE FUNCTION create_user(
     p_uuid CHAR(25),
     p_username VARCHAR(25), 
     p_email VARCHAR(40), 
     p_profile_img VARCHAR(250) , 
     p_spotify_id VARCHAR(20)
 )
-LANGUAGE plpgsql AS $$
+RETURNS INT AS $$
     DECLARE
         user_id INTEGER;
+        bag_id INTEGER;
     BEGIN
     
         IF check_uuid(p_uuid) THEN
@@ -187,23 +225,27 @@ LANGUAGE plpgsql AS $$
         INSERT INTO users (uuid, username, email, profile_img, spotify_id) 
         VALUES (p_uuid, p_username, p_email, p_profile_img, p_spotify_id) RETURNING id into user_id;
 
-        INSERT INTO bags (user_id) VALUES (user_id);
+        INSERT INTO bags (user_id) VALUES (user_id) RETURNING id INTO bag_id;
+
+        RETURN bag_id;
 
     END
-$$;
+$$ LANGUAGE plpgsql;
 
 DROP PROCEDURE IF EXISTS insert_album;
 
-CREATE OR REPLACE PROCEDURE insert_album(
+CREATE FUNCTION insert_album(
     p_spotify_id VARCHAR(20),
     p_name VARCHAR(40),
     p_cover VARCHAR(250),
     p_r_avg INT,
     p_g_avg INT,
     p_b_avg INT,
+    p_width INT,
+    p_height INT,
     p_user_id INT
 ) 
-LANGUAGE plpgsql AS $$
+RETURNS INTEGER AS $$
     DECLARE 
         _bag_id INTEGER;
         _album_id INTEGER;
@@ -219,8 +261,8 @@ LANGUAGE plpgsql AS $$
 
         IF _album_id IS NULL THEN
 
-            INSERT INTO albums (spotify_id, name, cover, r_avg, g_avg, b_avg) 
-            VALUES (p_spotify_id, p_name, p_cover, p_r_avg, p_g_avg, p_b_avg)
+            INSERT INTO albums (spotify_id, name, cover, r_avg, g_avg, b_avg, width, height) 
+            VALUES (p_spotify_id, p_name, p_cover, p_r_avg, p_g_avg, p_b_avg, p_width, p_height)
             RETURNING id INTO _album_id;
 
         ELSE
@@ -235,8 +277,9 @@ LANGUAGE plpgsql AS $$
             RAISE NOTICE 'this album has been already assigned to bag with id: %', _bag_id;
         END IF;
 
+        RETURN _album_id;
     END
-$$;
+$$ LANGUAGE plpgsql ;
 
 
 DROP PROCEDURE IF EXISTS insert_song;
@@ -244,7 +287,7 @@ DROP PROCEDURE IF EXISTS insert_song;
 CREATE OR REPLACE PROCEDURE insert_song(
     _spotify_id VARCHAR(20),
     _name VARCHAR(300),
-    _album_id INT
+    _album_id INTEGER
 
 ) LANGUAGE plpgsql AS $$
     BEGIN

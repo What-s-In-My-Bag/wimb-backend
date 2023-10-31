@@ -2,11 +2,13 @@ package repo
 
 import (
 	"database/sql"
-	"fmt"
 	dto "wimb-backend/src/DTO"
 	"wimb-backend/src/models"
 	"wimb-backend/src/utils"
 )
+
+var Scontext = dto.BagContext{}
+var bagStrategy = dto.BagStrategy{}
 
 type DBRepo struct {
 	db *sql.DB
@@ -18,15 +20,16 @@ func NewDbRepo(db *sql.DB) *DBRepo {
 	}
 }
 
-func (r *DBRepo) InsertUser(bu *models.BaseUser) (string, error) {
+func (r *DBRepo) InsertUser(bu *models.BaseUser) (string, int, error) {
 	user := models.GenerateNewUser(bu)
-	query := `CALL create_user($1, $2, $3, $4, $5)`
-	_, err := r.db.Exec(query, user.Uuid, user.Username, user.Email, user.Profile_Img, user.Spotify_Id)
-	return user.Uuid, err
+	bag_id := 0
+	query := `SELECT create_user($1, $2, $3, $4, $5)`
+
+	err := r.db.QueryRow(query, user.Uuid, user.Username, user.Email, user.Profile_Img, user.Spotify_Id).Scan(&bag_id)
+	return user.Uuid, bag_id, err
 }
 
 func (r *DBRepo) CheckAlbumExists(spotidy_id *string) bool {
-	fmt.Println("ID ", *spotidy_id)
 	query := `SELECT check_album_exists($1)`
 	exists := false
 	err := r.db.QueryRow(query, *spotidy_id).Scan(&exists)
@@ -37,15 +40,28 @@ func (r *DBRepo) CheckAlbumExists(spotidy_id *string) bool {
 	return exists
 }
 
-func (r *DBRepo) InsertAlbum(album models.Album, user_id *int64) error {
-	query := `CALL insert_album($1, $2, $3, $4, $5, $6, $7)`
-	_, err := r.db.Query(query, album.Spotify_Id, album.Name, album.Cover, album.R_Avg, album.G_Avg, album.B_Avg, user_id)
+func (r *DBRepo) InsertAlbum(album models.Album, user_id *int64) (int, error) {
+	query := `SELECT insert_album($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	album_id := 0
+	err := r.db.QueryRow(
+		query,
+		album.Spotify_Id,
+		album.Name,
+		album.Cover,
+		album.R_Avg,
+		album.G_Avg,
+		album.B_Avg,
+		album.Width,
+		album.Height,
+		user_id,
+	).Scan(&album_id)
 
 	if err != nil {
 		utils.GetLogger().Error(err.Error())
+		return album_id, err
 	}
 
-	return err
+	return album_id, err
 }
 
 func (r *DBRepo) GetUser(user_uuid *string) (dto.BagResponse, error) {
@@ -60,62 +76,24 @@ func (r *DBRepo) GetUser(user_uuid *string) (dto.BagResponse, error) {
 		return response, err
 	}
 
-	defer rows.Close()
+	Scontext.SetParser(&bagStrategy)
 
-	for rows.Next() {
-		var user dto.UserResponse
-		var bag models.BaseBag
-		var album models.Album
-		var song models.Song
+	return Scontext.ExecParse(rows)
+}
 
-		err := rows.Scan(&user.Uuid,
-			&user.Uuid,
-			&user.Username,
-			&user.Profile_Img,
-			&bag.Shirt_Color,
-			&bag.Show_Album_Names,
-			&album.Spotify_Id,
-			&album.Name,
-			&album.Cover,
-			&album.R_Avg,
-			&album.B_Avg,
-			&album.G_Avg,
-			&song.Spotify_Id,
-			&song.Name,
-		)
+func (r *DBRepo) GetBag(bag_Id *int) (dto.BagResponse, error) {
+	query := `SELECT * FROM get_bag_populated($1)`
 
-		if err != nil {
-			utils.GetLogger().Error(err.Error())
-			return response, err
-		}
+	rows, err := r.db.Query(query, bag_Id)
 
-		if response.UserResponse.Uuid == "" {
-			response.UserResponse = user
-			response.Bag.BaseBag = bag
-		}
+	response := dto.BagResponse{}
 
-		var albumExists *dto.AlbumsWithSongs
-
-		for i, a := range response.Bag.Albums {
-			if a.Spotify_Id == album.Spotify_Id {
-				albumExists = &response.Bag.Albums[i]
-				break
-			}
-		}
-		if albumExists == nil {
-			newAlbum := dto.AlbumsWithSongs{
-				Album: album,
-				Songs: []models.Song{song},
-			}
-			response.Bag.Albums = append(response.Bag.Albums, newAlbum)
-		} else {
-			albumExists.Songs = append(albumExists.Songs, song)
-		}
-	}
-	if response.Uuid == "" {
-		return response, fmt.Errorf("user not found")
+	if err != nil {
+		utils.GetLogger().Error(err.Error())
+		return response, err
 	}
 
-	return response, nil
+	Scontext.SetParser(&bagStrategy)
 
+	return Scontext.ExecParse(rows)
 }

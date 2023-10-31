@@ -110,25 +110,32 @@ func (s *DBService) check_existing_albums(albums *[]models.BaseAlbum) []models.B
 
 }
 
-func (s *DBService) CreateUser(user *models.BaseUser) (string, error) {
+func (s *DBService) CreateUser(user *models.BaseUser) (string, int, error) {
 	return s.repo.InsertUser(user)
 }
 
-func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) error {
+func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) ([]int, error) {
 
 	existing_albums := s.check_existing_albums(albums)
+
+	ids := make([]int, 0)
+
+	if len(existing_albums) == 0 {
+		return ids, nil
+	}
 
 	avg_colors, err := get_avgs_color(&existing_albums)
 
 	if err != nil {
 		utils.GetLogger().Error(err.Error())
-		return fmt.Errorf("inserting albums went wrong")
+		return nil, fmt.Errorf("inserting albums went wrong")
 	}
 
 	inserted_albums := dto.MergeAlbums(&avg_colors, &existing_albums)
 
 	errCh := make(chan error)
 	stopCh := make(chan struct{})
+	idCh := make(chan int, len(existing_albums))
 
 	var wg sync.WaitGroup
 
@@ -140,10 +147,11 @@ func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) err
 			case <-stopCh:
 				return
 			default:
-				err := s.repo.InsertAlbum(a, user_id)
+				id, err := s.repo.InsertAlbum(a, user_id)
 				if err != nil {
 					errCh <- err
 				}
+				idCh <- id
 			}
 
 		}(album)
@@ -152,18 +160,27 @@ func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) err
 	go func() {
 		wg.Wait()
 		close(errCh)
+		close(idCh)
 	}()
 
 	for err := range errCh {
 		if err != nil {
 			close(stopCh)
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	for id := range idCh {
+		ids = append(ids, id)
+	}
+
+	return ids, nil
 }
 
 func (s *DBService) GetUser(user_uuid *string) (dto.BagResponse, error) {
 	return s.repo.GetUser(user_uuid)
+}
+
+func (s *DBService) GetBag(bag_id *int) (dto.BagResponse, error) {
+	return s.repo.GetBag(bag_id)
 }
