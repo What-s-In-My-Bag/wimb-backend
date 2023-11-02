@@ -65,10 +65,10 @@ CREATE TABLE songs (
 
 
 
-CREATE TABLE albums_bags(
+CREATE TABLE songs_bags(
   bag_id INT REFERENCES bags(id), 
-  album_id integer REFERENCES albums(id),
-  PRIMARY KEY (bag_id, album_id)
+  song_id integer REFERENCES songs(id),
+  PRIMARY KEY (bag_id, song_id)
 );
 
 
@@ -161,9 +161,9 @@ RETURNS SETOF user_bag_album AS $$
             )
 
           ) b ON u.id = b.user_id
-            LEFT JOIN albums_bags ba ON b.id = ba.bag_id                
-            LEFT JOIN albums a ON ba.album_id = a.id
-            LEFT JOIN songs s ON a.id = s.album_id
+            LEFT JOIN songs_bags ba ON b.id = ba.bag_id                
+            LEFT JOIN songs s ON ba.song_id = s.id
+            LEFT JOIN albums a ON s.album_id = a.id
             WHERE u.uuid = p_user_uuid; 
 
     END
@@ -194,9 +194,9 @@ BEGIN
             s.name AS song_name
         FROM bags b 
         JOIN users u ON b.user_id = u.id
-        LEFT JOIN albums_bags ba ON b.id = ba.bag_id                
-        LEFT JOIN albums a ON ba.album_id = a.id
-        LEFT JOIN songs s ON a.id = s.album_id
+            LEFT JOIN songs_bags ba ON b.id = ba.bag_id                
+            LEFT JOIN songs s ON ba.song_id = s.id
+            LEFT JOIN albums a ON s.album_id = a.id
         WHERE b.id = _bag_id;
 END
 $$ LANGUAGE plpgsql;
@@ -232,7 +232,7 @@ RETURNS INT AS $$
     END
 $$ LANGUAGE plpgsql;
 
-DROP PROCEDURE IF EXISTS insert_album;
+DROP FUNCTION IF EXISTS insert_album;
 
 CREATE FUNCTION insert_album(
     p_spotify_id VARCHAR(20),
@@ -242,20 +242,12 @@ CREATE FUNCTION insert_album(
     p_g_avg INT,
     p_b_avg INT,
     p_width INT,
-    p_height INT,
-    p_user_id INT
+    p_height INT
 ) 
 RETURNS INTEGER AS $$
     DECLARE 
-        _bag_id INTEGER;
         _album_id INTEGER;
     BEGIN
-
-        SELECT * INTO _bag_id FROM get_bag_by_user_id(p_user_id) ;
-
-        IF _bag_id IS NULL THEN
-            RAISE EXCEPTION 'Invalid User';
-        END IF;
 
         SELECT id INTO _album_id FROM albums WHERE spotify_id = p_spotify_id;
 
@@ -269,15 +261,8 @@ RETURNS INTEGER AS $$
             RAISE NOTICE 'album already exist';
         END IF;
 
-
-        IF NOT EXISTS (SELECT 1 FROM albums_bags WHERE album_id = _album_id AND bag_id = _bag_id) THEN
-
-            INSERT INTO albums_bags (bag_id , album_id) VALUES (_bag_id, _album_id);
-        ELSE 
-            RAISE NOTICE 'this album has been already assigned to bag with id: %', _bag_id;
-        END IF;
-
         RETURN _album_id;
+
     END
 $$ LANGUAGE plpgsql ;
 
@@ -287,10 +272,18 @@ DROP PROCEDURE IF EXISTS insert_song;
 CREATE OR REPLACE PROCEDURE insert_song(
     _spotify_id VARCHAR(20),
     _name VARCHAR(300),
-    _album_id INTEGER
+    _album_id INTEGER,
+    _bag_id INTEGER
 
 ) LANGUAGE plpgsql AS $$
+    DECLARE
+        _song_id INT;
     BEGIN
+
+
+        IF NOT EXISTS (SELECT 1 FROM bags WHERE id = _bag_id) THEN
+            RAISE EXCEPTION 'The bag id is invalid ';
+        END IF;
 
         IF NOT EXISTS (SELECT 1 FROM albums WHERE id = _album_id ) THEN
             RAISE EXCEPTION 'The album id is invalid ';
@@ -298,11 +291,19 @@ CREATE OR REPLACE PROCEDURE insert_song(
 
         IF NOT EXISTS (SELECT 1 FROM songs WHERE album_id = _album_id AND spotify_id = _spotify_id) THEN
 
-            INSERT INTO songs (spotify_id, album_id, name) VALUES (_spotify_id, _album_id, _name);
+            INSERT INTO songs (spotify_id, album_id, name) VALUES (_spotify_id, _album_id, _name)
+            RETURNING id INTO _song_id;
 
         ELSE
             RAISE NOTICE 'this song has been already created %', _spotify_id;
 
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM songs_bags WHERE song_id = _song_id AND bag_id = _bag_id) THEN
+
+            INSERT INTO songs_bags (bag_id , song_id) VALUES (_bag_id, _song_id);
+        ELSE 
+            RAISE NOTICE 'this song has been already assigned to bag with id: %', _bag_id;
         END IF;
     END
 $$;
@@ -355,7 +356,7 @@ CREATE OR REPLACE PROCEDURE delete_bag(
 LANGUAGE plpgsql AS $$
     BEGIN
 
-        DELETE from albums_bags WHERE bag_id = _bag_id;
+        DELETE from songs_bags WHERE bag_id = _bag_id;
         DELETE from bags WHERE id = _bag_id;
 
     END
@@ -372,7 +373,7 @@ LANGUAGE plpgsql AS $$
     BEGIN
 
         SELECT get_bag_by_user_id(user_id) INTO _bag_id;
-        DELETE from albums_bags WHERE bag_id = _bag_id;
+        DELETE from songs_bags WHERE bag_id = _bag_id;
         DELETE from bags WHERE id = _bag_id;
 
     END
@@ -388,3 +389,12 @@ CREATE FUNCTION check_album_exists(
     END
 $$ LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS check_song_exists;
+
+CREATE FUNCTION check_song_exists(
+    _spotify_id VARCHAR(20)
+) RETURNS BOOLEAN AS $$
+    BEGIN
+        RETURN EXISTS (SELECT 1 FROM songs WHERE spotify_id = _spotify_id);
+    END
+$$ LANGUAGE plpgsql;

@@ -1,13 +1,20 @@
 package dto
 
 import (
-	"fmt"
 	"wimb-backend/src/models"
 )
 
 type AlbumsInput struct {
-	User_Id int64              `json:"user_id" binding:"required"`
-	Albums  []models.BaseAlbum `json:"albums" binding:"required"`
+	Albums []models.BaseAlbum `json:"albums" binding:"required"`
+}
+
+type SongInput struct {
+	models.Song
+	Album_id int `json:"album_id" binding:"required"`
+}
+type SongsInput struct {
+	Bag_Id int         `json:"bag_id" binding:"required"`
+	Songs  []SongInput `json:"songs" binding:"required"`
 }
 
 type AVGColors struct {
@@ -64,8 +71,6 @@ func MergeAlbums(avg_albums *[]AVGColorAlbumResponse, albums *[]models.BaseAlbum
 
 		}
 	}
-
-	fmt.Println("EL RESULTADO", result)
 
 	return &result
 

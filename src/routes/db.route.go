@@ -12,7 +12,8 @@ func DBRoute(router *gin.Engine, db *sql.DB) {
 
 	r := router.Group("/api/db")
 	r.GET("/user/:uuid", controller.GetUser())
+	r.GET("/bag/:id", controller.GetBag())
 	r.POST("/user", controller.InsertUser())
 	r.POST("/album", controller.InsertAlbums())
-	r.GET("/bag/:id", controller.GetBag())
+	r.POST("/song", controller.InsertSongs())
 }

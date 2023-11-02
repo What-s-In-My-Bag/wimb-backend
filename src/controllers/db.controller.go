@@ -89,7 +89,7 @@ func (c *DBController) InsertAlbums() gin.HandlerFunc {
 			}
 		}
 
-		ids, err := c.service.InsertAlbums(&albumsInput.Albums, &albumsInput.User_Id)
+		ids, err := c.service.InsertAlbums(&albumsInput.Albums)
 
 		if err != nil {
 			dto.NewGenericResponseBuilder().
@@ -176,5 +176,40 @@ func (c *DBController) GetBag() gin.HandlerFunc {
 			SetData(gin.H{
 				"result": result,
 			}).MakeResponse(ctx)
+	}
+}
+
+func (c *DBController) InsertSongs() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var songsInput dto.SongsInput
+		if err := ctx.BindJSON(&songsInput); err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusBadRequest).
+				SetMessage("Error").
+				SetData(gin.H{
+					"error": "please provide a valid structure",
+				}).MakeResponse(ctx)
+			return
+		}
+
+		err := c.service.InsertSongs(&songsInput)
+
+		if err != nil {
+			dto.NewGenericResponseBuilder().
+				SetStatus(http.StatusBadRequest).
+				SetMessage("Error").
+				SetData(gin.H{
+					"error": "Issue inserting albums",
+				}).MakeResponse(ctx)
+			return
+		}
+
+		dto.NewGenericResponseBuilder().
+			SetStatus(http.StatusOK).
+			SetMessage("Ok").
+			SetData(gin.H{
+				"result": "Success",
+			}).MakeResponse(ctx)
+
 	}
 }

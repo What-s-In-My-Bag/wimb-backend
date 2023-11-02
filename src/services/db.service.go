@@ -114,7 +114,7 @@ func (s *DBService) CreateUser(user *models.BaseUser) (string, int, error) {
 	return s.repo.InsertUser(user)
 }
 
-func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) ([]int, error) {
+func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum) ([]int, error) {
 
 	existing_albums := s.check_existing_albums(albums)
 
@@ -147,8 +147,10 @@ func (s *DBService) InsertAlbums(albums *[]models.BaseAlbum, user_id *int64) ([]
 			case <-stopCh:
 				return
 			default:
-				id, err := s.repo.InsertAlbum(a, user_id)
+				id, err := s.repo.InsertAlbum(a)
 				if err != nil {
+
+					utils.GetLogger().Error(err.Error())
 					errCh <- err
 				}
 				idCh <- id
@@ -183,4 +185,48 @@ func (s *DBService) GetUser(user_uuid *string) (dto.BagResponse, error) {
 
 func (s *DBService) GetBag(bag_id *int) (dto.BagResponse, error) {
 	return s.repo.GetBag(bag_id)
+}
+
+func (s *DBService) InsertSongs(songs *dto.SongsInput) error {
+
+	errCh := make(chan error)
+	stopCh := make(chan struct{})
+
+	var wg sync.WaitGroup
+
+	for _, song := range songs.Songs {
+		wg.Add(1)
+		go func(sg dto.SongInput) {
+			select {
+			case <-stopCh:
+				return
+			default:
+				defer wg.Done()
+				exists := s.repo.CheckSongExists(&sg.Spotify_Id)
+				if exists {
+					return
+				}
+				err := s.repo.InsertSong(&sg.Song, &sg.Album_id, &songs.Bag_Id)
+
+				if err != nil {
+					utils.GetLogger().Error(err.Error())
+					errCh <- err
+				}
+			}
+
+		}(song)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	for err := range errCh {
+		if err != nil {
+			close(stopCh)
+			return err
+		}
+	}
+	return nil
 }

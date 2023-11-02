@@ -40,8 +40,8 @@ func (r *DBRepo) CheckAlbumExists(spotidy_id *string) bool {
 	return exists
 }
 
-func (r *DBRepo) InsertAlbum(album models.Album, user_id *int64) (int, error) {
-	query := `SELECT insert_album($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+func (r *DBRepo) InsertAlbum(album models.Album) (int, error) {
+	query := `SELECT insert_album($1, $2, $3, $4, $5, $6, $7, $8)`
 	album_id := 0
 	err := r.db.QueryRow(
 		query,
@@ -53,7 +53,6 @@ func (r *DBRepo) InsertAlbum(album models.Album, user_id *int64) (int, error) {
 		album.B_Avg,
 		album.Width,
 		album.Height,
-		user_id,
 	).Scan(&album_id)
 
 	if err != nil {
@@ -96,4 +95,26 @@ func (r *DBRepo) GetBag(bag_Id *int) (dto.BagResponse, error) {
 	Scontext.SetParser(&bagStrategy)
 
 	return Scontext.ExecParse(rows)
+}
+
+func (r *DBRepo) CheckSongExists(spotidy_id *string) bool {
+	query := `SELECT check_album_exists($1)`
+	exists := false
+	err := r.db.QueryRow(query, *spotidy_id).Scan(&exists)
+	if err != nil {
+		utils.GetLogger().Error(err.Error())
+		return exists
+	}
+	return exists
+}
+
+func (r *DBRepo) InsertSong(song *models.Song, album_id *int, bag_id *int) error {
+	query := `CALL insert_song($1, $2, $3, $4)`
+
+	_, err := r.db.Query(query, song.Name, song.Spotify_Id, album_id, bag_id)
+
+	if err != nil {
+		utils.GetLogger().Error(err.Error())
+	}
+	return err
 }
